@@ -1,0 +1,14 @@
+{
+  "name": "@welib/rdf",
+  "version": "0.0.1",
+  "description": "class helper to navigate RDF graph",
+  "type": "module",
+  "exports": "./rdf.js",
+  "scripts": {
+    "test": "echo no tests defined"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.1",
+    "rdf": "^4.1.1"
+  }
+}
