@@ -1,0 +1,14 @@
+{
+  "name": "@welib/rdf",
+  "version": "0.0.2",
+  "description": "filter RDF quads",
+  "type": "module",
+  "exports": "./rdf.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "devDependencies": {
+    "expect.js": "^0.3.1",
+    "mocha": "^10.2.0"
+  }
+}
