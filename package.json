@@ -1,6 +1,6 @@
 {
   "name": "@welib/rdf",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "filter RDF quads",
   "type": "module",
   "exports": "./rdf.js",

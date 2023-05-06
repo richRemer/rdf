@@ -1,6 +1,9 @@
 import Filter from "./filter.js";
 import {Prefix} from "./prefix.js";
 
+const flatten = Symbol("QuadReader.flatten");
+const objects = Symbol("QuadReader.objects");
+
 const xsd = new Prefix("http://www.w3.org/2001/XMLSchema#");
 
 /**
@@ -23,13 +26,25 @@ export class QuadReader {
     this.#filter = Filter(subject, predicate, object, graph);
   }
 
-  // TODO: additional methods?
-  // getObjectValue
-  // getPredicateValue
-  // or not; shouldn't getTermValue work for allPO key?
+  static flatten = flatten;
+  static objects = objects;
 
   /**
-   * Evaluate an RDF node to determine its value.  For named nodes, return the
+   * Evaluate an RDF term to determine its value.  For named nodes and blank
+   * nodes, return the node itself.  For literal nodes, return the literal
+   * value.
+   */
+  static getObjectValue(term) {
+    if (!term) return term;
+
+    switch (Object.getPrototypeOf(term).constructor.name) {
+      case "Literal":   return QuadReader.getLiteralValue(term);
+      default:          return term;
+    }
+  }
+
+  /**
+   * Evaluate an RDF term to determine its value.  For named nodes, return the
    * id of the node.  For blank nodes, return the node itself.  For literal
    * nodes, return the literal value.
    */
@@ -116,5 +131,93 @@ export class QuadReader {
     }
 
     return result;
+  }
+
+  /**
+   * Create a plain old JavaScript object based on the list of quads.  If a
+   * subject is specified, the object will include predicates for that subject.
+   * If no subject is specified, the object will have a key for each non-blank
+   * subject in the quad set.  The following options are recognized and can be
+   * provided in any order:
+   *  - QuadReader.objects: include references to objects when possible
+   *  - QuadReader.flatten: flatten arrays when possible
+   */
+  pojo(subject, ...options) {
+    for (const option of options) {
+      if (![QuadReader.flatten, QuadReader.objects].includes(option)) {
+        throw new Error(`invalid option '${option}'`);
+      }
+    }
+
+    const flatten = options.includes(QuadReader.flatten);
+    const objects = options.includes(QuadReader.objects);
+    const reader = this;
+    const evaluated = new Map();
+    const subjects = new Set([...reader].map(q => q.subject));
+
+    // if subject id provided, get the actual subject
+    if (typeof subject === "string") {
+      const [quad] = reader.filter(subject);
+      subject = quad?.subject ?? true;   // true caught as degenerate below
+    }
+
+    // if requested subject is not in quad set, return degenerate object
+    if (subject && !subjects.has(subject)) {
+      return {};
+    }
+
+    // if subject specified, evaluate it and return
+    if (subject) {
+      return pojo(subject);
+    }
+
+    // if subject not specified, build pojo from all named subjects
+    else {
+      const named = [...subjects].filter(s => s.constructor.name==="NamedNode");
+      return named.reduce((o,s) => ({...o, [s.id]: pojo(s)}), {});
+    }
+
+    // recursive implementation
+    function pojo(subject) {
+      // add subject to evaluated cache if missing
+      if (!evaluated.has(subject)) {
+        // evaluate subject if it's included in quads
+        if (subjects.has(subject)) {
+          const result = {};
+
+          evaluated.set(subject, result);
+
+          for (const quad of reader.filter(subject)) {
+            const key = quad.predicate.id;
+            const object = QuadReader.getObjectValue(quad.object);
+            let value;
+
+            if (typeof object === "object") {
+              value = objects ? pojo(object) : object.id;
+            } else {
+              value = object;
+            }
+
+            if (result[key] instanceof Array) {
+              result[key].push(value);
+            } else if (result[key]) {
+              result[key] = [result[key], value];
+            } else if (flatten) {
+              result[key] = value;
+            } else {
+              result[key] = [value];
+            }
+          }
+        }
+
+        // otherwise use the subject id
+        else {
+          evaluated.set(subject, subject.id);
+        }
+      }
+
+      // return evaluated subject from cache
+      return evaluated.get(subject);
+    }
   }
 }

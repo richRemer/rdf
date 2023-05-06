@@ -150,4 +150,107 @@ describe("QuadReader", () => {
       expect(po.is).to.be(b1);
     });
   });
+
+  describe("QuadReader#pojo(subject, [flatten], [objects])", () => {
+    const quadA = Quad(A, knows, B, graph);
+    const quadB = Quad(B, knows, C, graph);
+    const quadC = Quad(C, named, new Literal('"foo"'), graph);
+    const quadD = Quad(C, is, b1, graph);
+    const quadE = Quad(quadD.object, is, A, graph);
+    const reader = new QuadReader([quadA, quadB, quadC, quadD, quadE]);
+
+    it("should return object", () => {
+      expect(reader.pojo()).to.be.an("object");
+    });
+
+    it("should set keys for subject ids", () => {
+      const object = reader.pojo();
+
+      expect(object).to.have.key(A.id);
+      expect(object).to.have.key(B.id);
+      expect(object).to.have.key(C.id);
+    });
+
+    it("should set values to nested objects", () => {
+      const object = reader.pojo();
+
+      expect(object[A.id]).to.be.an("object");
+      expect(object[B.id]).to.be.an("object");
+      expect(object[C.id]).to.be.an("object");
+    });
+
+    it("should set nested object keys to predicate ids", () => {
+      const object = reader.pojo();
+
+      expect(object[A.id]).to.have.key("knows");
+      expect(object[B.id]).to.have.key("knows");
+      expect(object[C.id]).to.have.key("named");
+    });
+
+    it("should set nested object values to arrays of object ids", () => {
+      const object = reader.pojo();
+
+      expect(object[A.id].knows).to.have.length(1);
+      expect(object[B.id].knows).to.have.length(1);
+      expect(object[C.id].named).to.have.length(1);
+
+      expect(object[A.id].knows).to.contain(B.id);
+      expect(object[B.id].knows).to.contain(C.id);
+      expect(object[C.id].named).to.contain("foo");
+    });
+
+    it("should return single object if specified", () => {
+      const object = reader.pojo(A);
+
+      expect(object).to.be.an("object");
+      expect(object).to.only.have.keys("knows");
+      expect(object.knows).to.have.length(1);
+      expect(object.knows).to.contain(B.id);
+    });
+
+    it("should return single object by id", () => {
+      const object = reader.pojo(A.id);
+
+      expect(object).to.be.an("object");
+      expect(object).to.only.have.keys("knows");
+      expect(object.knows).to.have.length(1);
+      expect(object.knows).to.contain(B.id);
+    });
+
+    it("should flatten values if option specified", () => {
+      const object = reader.pojo(A, QuadReader.flatten);
+
+      expect(object.knows).to.be(B.id);
+    });
+
+    it("should descend into objects if option specified", () => {
+      const object = reader.pojo(A, QuadReader.flatten, QuadReader.objects);
+
+      expect(object.knows).to.be.an("object");
+      expect(object.knows).to.only.have.keys("knows");
+      expect(object.knows.knows).to.be.an("object");
+      expect(object.knows.knows).to.only.have.keys(["named", "is"]);
+      expect(object.knows.knows.named).to.be("foo");
+    });
+
+    it("should generate circular references when descending", () => {
+      const object = reader.pojo(null, QuadReader.flatten, QuadReader.objects);
+
+      expect(object).to.have.key(A.id);
+      expect(object).to.have.key(B.id);
+      expect(object).to.have.key(C.id);
+
+      expect(object[A.id].knows).to.be(object[B.id]);
+      expect(object[B.id].knows).to.be(object[C.id]);
+      expect(object[C.id].named).to.be("foo");
+    });
+
+    it("should descend into BlankNodes", () => {
+      const object = reader.pojo(null, QuadReader.flatten, QuadReader.objects);
+
+      expect(object[C.id]).to.have.key("is");
+      expect(object[C.id].is).to.be.an("object");
+      expect(object[C.id].is.is).to.be(object[A.id]);
+    });
+  });
 });
