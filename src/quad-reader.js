@@ -107,6 +107,28 @@ export class QuadReader {
   }
 
   /**
+   * Return array of unique subjects found in the quads.
+   */
+  subjects() {
+    return [...new Set(this.#quads.map(q => q.subject))];
+  }
+
+  /**
+   * Return array of unique predicates found in the quads.
+   */
+  predicates() {
+    return [...new Set(this.#quads.map(q => q.predicate))];
+  }
+
+  /**
+   * Return array of unique objects found in the quads.
+   */
+  objects() {
+    const {getObjectValue} = QuadReader;
+    return [...new Set(this.#quads.map(q => getObjectValue(q.object)))];
+  }
+
+  /**
    * Return an object containing all filtered quad predicates and objects, using
    * the predicate as the keys, and the objects as the values.  Each object
    * value will be an array by default.  If flatten is truthy the arrays will be

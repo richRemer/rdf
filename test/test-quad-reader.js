@@ -28,6 +28,13 @@ function Quad(subject, predicate, object, graph) {
 }
 
 describe("QuadReader", () => {
+  describe("static properties", () => {
+    it("should expose option symbols", () => {
+      expect(QuadReader.flatten).to.be.a("symbol");
+      expect(QuadReader.objects).to.be.a("symbol");
+    });
+  });
+
   describe("new QuadReader([Quad, ...])", () => {
     it("should construct an QuadReader object", () => {
       expect(new QuadReader([])).to.be.a(QuadReader);
@@ -97,6 +104,61 @@ describe("QuadReader", () => {
     })
   });
 
+  describe("QuadReader#subjects()", () => {
+    const quadA = Quad(A, named, new Literal('"A"'), graph);
+    const quadB = Quad(B, named, new Literal('"B"'), graph);
+    const quadC = Quad(B, knows, A, graph);
+    const quadD = Quad(b1, named, new Literal('"b1"'), graph);
+    const reader = new QuadReader([quadA, quadB, quadC, quadD]);
+
+    it("should return array of unique subjects", () => {
+      const subjects = reader.subjects();
+
+      expect(subjects).to.be.an("array");
+      expect(subjects).to.have.length(3);
+      expect(subjects).to.contain(A);
+      expect(subjects).to.contain(B);
+      expect(subjects).to.contain(b1);
+    });
+  });
+
+  describe("QuadReader#predicates()", () => {
+    const quadA = Quad(A, named, new Literal('"A"'), graph);
+    const quadB = Quad(B, named, new Literal('"B"'), graph);
+    const quadC = Quad(B, knows, A, graph);
+    const quadD = Quad(b1, named, new Literal('"b1"'), graph);
+    const reader = new QuadReader([quadA, quadB, quadC, quadD]);
+
+    it("should return array of unique predicates", () => {
+      const predicates = reader.predicates();
+
+      expect(predicates).to.be.an("array");
+      expect(predicates).to.have.length(2);
+      expect(predicates).to.contain(named);
+      expect(predicates).to.contain(knows);
+    });
+  });
+
+  describe("QuadReader#objects()", () => {
+    const quadA = Quad(A, named, new Literal('"A"'), graph);
+    const quadB = Quad(B, named, new Literal('"B"'), graph);
+    const quadC = Quad(B, knows, A, graph);
+    const quadD = Quad(b1, named, new Literal('"b1"'), graph);
+    const quadE = Quad(b1, knows, A, graph);
+    const reader = new QuadReader([quadA, quadB, quadC, quadD, quadE]);
+
+    it("should return array of unique objects", () => {
+      const objects = reader.objects();
+
+      expect(objects).to.be.an("array");
+      expect(objects).to.have.length(4);
+      expect(objects).to.contain("A");
+      expect(objects).to.contain("B");
+      expect(objects).to.contain("b1");
+      expect(objects).to.contain(A);
+    });
+  });
+
   describe("QuadReader#allPO(flatten)", () => {
     const quadA = Quad(A, is, B, graph);
     const quadB = Quad(A, knows, B, graph);
@@ -156,7 +218,7 @@ describe("QuadReader", () => {
     const quadB = Quad(B, knows, C, graph);
     const quadC = Quad(C, named, new Literal('"foo"'), graph);
     const quadD = Quad(C, is, b1, graph);
-    const quadE = Quad(quadD.object, is, A, graph);
+    const quadE = Quad(b1, is, A, graph);
     const reader = new QuadReader([quadA, quadB, quadC, quadD, quadE]);
 
     it("should return object", () => {
