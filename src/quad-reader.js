@@ -110,14 +110,14 @@ export class QuadReader {
    * Return array of unique subjects found in the quads.
    */
   subjects() {
-    return [...new Set(this.#quads.map(q => q.subject))];
+    return [...new Set([...this].map(q => q.subject))];
   }
 
   /**
    * Return array of unique predicates found in the quads.
    */
   predicates() {
-    return [...new Set(this.#quads.map(q => q.predicate))];
+    return [...new Set([...this].map(q => q.predicate))];
   }
 
   /**
@@ -125,7 +125,7 @@ export class QuadReader {
    */
   objects() {
     const {getObjectValue} = QuadReader;
-    return [...new Set(this.#quads.map(q => getObjectValue(q.object)))];
+    return [...new Set([...this].map(q => getObjectValue(q.object)))];
   }
 
   /**

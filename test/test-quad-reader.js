@@ -120,6 +120,14 @@ describe("QuadReader", () => {
       expect(subjects).to.contain(B);
       expect(subjects).to.contain(b1);
     });
+
+    it("should only return filtered subjects", () => {
+      const subjects = reader.filter(null, knows).subjects();
+
+      expect(subjects).to.be.an("array");
+      expect(subjects).to.have.length(1);
+      expect(subjects).to.contain(B);
+    });
   });
 
   describe("QuadReader#predicates()", () => {
@@ -136,6 +144,14 @@ describe("QuadReader", () => {
       expect(predicates).to.have.length(2);
       expect(predicates).to.contain(named);
       expect(predicates).to.contain(knows);
+    });
+
+    it("should only return filtered predicates", () => {
+      const predicates = reader.filter(b1).predicates();
+
+      expect(predicates).to.be.an("array");
+      expect(predicates).to.have.length(1);
+      expect(predicates).to.contain(named);
     });
   });
 
@@ -156,6 +172,14 @@ describe("QuadReader", () => {
       expect(objects).to.contain("B");
       expect(objects).to.contain("b1");
       expect(objects).to.contain(A);
+    });
+
+    it("should only return filtered subjects", () => {
+      const subjects = reader.filter(null, knows).objects();
+
+      expect(subjects).to.be.an("array");
+      expect(subjects).to.have.length(1);
+      expect(subjects).to.contain(A);
     });
   });
 
